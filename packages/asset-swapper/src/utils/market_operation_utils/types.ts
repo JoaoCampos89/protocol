@@ -157,7 +157,9 @@ export interface DexSample<TFillData extends FillData = FillData> {
     fillData: TFillData;
     input: BigNumber;
     output: BigNumber;
+    gasUsed: BigNumber;
 }
+
 export interface CurveFillData extends FillData {
     fromTokenIdx: number;
     toTokenIdx: number;
@@ -213,8 +215,8 @@ export interface GenericRouterFillData extends FillData {
 }
 
 export interface MultiHopFillData extends FillData {
-    firstHopSource: SourceQuoteOperation;
-    secondHopSource: SourceQuoteOperation;
+    firstHopSource: MeasuredSourceQuoteOperation;
+    secondHopSource: MeasuredSourceQuoteOperation;
     intermediateToken: string;
 }
 
@@ -270,6 +272,7 @@ export interface Fill<TFillData extends FillData = FillData> {
     parent?: Fill;
     // The index of the fill in the original path.
     index: number;
+    gasUsed: BigNumber;
 }
 
 /**
@@ -298,6 +301,7 @@ export interface CollapsedFill<TFillData extends FillData = FillData> {
         input: BigNumber;
         output: BigNumber;
     }>;
+    gasUsed: BigNumber;
 }
 
 /**
@@ -314,6 +318,7 @@ export interface OptimizedMarketOrderBase<TFillData extends FillData = FillData>
     makerAmount: BigNumber; // The amount we wish to buy from this order, e.g inclusive of any previous partial fill
     takerAmount: BigNumber; // The amount we wish to fill this for, e.g inclusive of any previous partial fill
     fills: CollapsedFill[];
+    gasUsed: BigNumber;
 }
 
 export interface OptimizedMarketBridgeOrder<TFillData extends FillData = FillData>
@@ -321,6 +326,7 @@ export interface OptimizedMarketBridgeOrder<TFillData extends FillData = FillDat
     type: FillQuoteTransformerOrderType.Bridge;
     fillData: TFillData;
     sourcePathId: string;
+    gasUsed: BigNumber;
 }
 
 export interface OptimizedLimitOrder extends OptimizedMarketOrderBase<NativeLimitOrderFillData> {
@@ -346,8 +352,6 @@ export interface GetMarketOrdersRfqOpts extends RfqRequestOpts {
     firmQuoteValidator?: RfqFirmQuoteValidator;
 }
 
-export type FeeEstimate = (fillData: FillData) => number | BigNumber;
-export type FeeSchedule = Partial<{ [key in ERC20BridgeSource]: FeeEstimate }>;
 export type ExchangeProxyOverhead = (sourceFlags: number) => BigNumber;
 
 /**
@@ -401,13 +405,9 @@ export interface GetMarketOrdersOpts {
      */
     sampleDistributionBase: number;
     /**
-     * Fees for each liquidity source, expressed in gas.
+     * The gas overhead of various execution paths
+     * E.g Uniswap VIP overhead, FlashWallet overhead
      */
-    feeSchedule: FeeSchedule;
-    /**
-     * Estimated gas consumed by each liquidity source.
-     */
-    gasSchedule: FeeSchedule;
     exchangeProxyOverhead: ExchangeProxyOverhead;
     /**
      * Whether to pad the quote with a redundant fallback quote using different
@@ -432,6 +432,10 @@ export interface GetMarketOrdersOpts {
      * hopping to. E.g DAI->USDC via an adjacent token WETH
      */
     tokenAdjacencyGraph: TokenAdjacencyGraph;
+    /**
+     * The current gas price. Used to adjust pricing by the cost of a DEX
+     */
+    gasPrice: BigNumber;
 }
 
 /**
@@ -441,6 +445,17 @@ export interface BatchedOperation<TResult> {
     encodeCall(): string;
     handleCallResults(callResults: string): TResult;
     handleRevert(callResults: string): TResult;
+}
+
+export interface MeasuredSamplerResult {
+    gasUsed: BigNumber[];
+    samples: BigNumber[];
+}
+
+export interface MeasuredSourceQuoteOperation<TFillData extends FillData = FillData>
+    extends BatchedOperation<MeasuredSamplerResult> {
+    readonly source: ERC20BridgeSource;
+    fillData: TFillData;
 }
 
 export interface SourceQuoteOperation<TFillData extends FillData = FillData> extends BatchedOperation<BigNumber[]> {
@@ -511,10 +526,10 @@ export interface GenerateOptimizedOrdersOpts {
     bridgeSlippage?: number;
     maxFallbackSlippage?: number;
     excludedSources?: ERC20BridgeSource[];
-    feeSchedule?: FeeSchedule;
     exchangeProxyOverhead?: ExchangeProxyOverhead;
     allowFallback?: boolean;
     shouldBatchBridgeOrders?: boolean;
+    gasPrice: BigNumber;
 }
 
 export interface ComparisonPrice {

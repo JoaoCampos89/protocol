@@ -18,7 +18,6 @@ const expect = chai.expect;
 const DAI_TOKEN = '0x6b175474e89094c44da98b954eedeac495271d0f';
 const ETH_TOKEN = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const GAS_PRICE = new BigNumber(50e9); // 50 gwei
-const NATIVE_ORDER_FEE = new BigNumber(220e3); // 220K gas
 
 // DEX samples to fill in MarketSideLiquidity
 const kyberSample1: DexSample = {
@@ -26,18 +25,16 @@ const kyberSample1: DexSample = {
     input: new BigNumber(10000),
     output: new BigNumber(10001),
     fillData: {},
+    gasUsed: new BigNumber(1),
 };
 const uniswapSample1: DexSample = {
     source: ERC20BridgeSource.UniswapV2,
     input: new BigNumber(10003),
     output: new BigNumber(10004),
     fillData: {},
+    gasUsed: new BigNumber(1),
 };
 const dexQuotes: DexSample[] = [kyberSample1, uniswapSample1];
-
-const feeSchedule = {
-    [ERC20BridgeSource.Native]: _.constant(GAS_PRICE.times(NATIVE_ORDER_FEE)),
-};
 
 const exchangeProxyOverhead = (sourceFlags: number) => {
     if ([SOURCE_FLAGS.RfqOrder].includes(sourceFlags)) {
@@ -102,7 +99,7 @@ describe('getComparisonPrices', async () => {
             adjustedRate,
             AMOUNT,
             sellMarketSideLiquidity,
-            feeSchedule,
+            GAS_PRICE,
             exchangeProxyOverhead,
         );
 
@@ -124,7 +121,7 @@ describe('getComparisonPrices', async () => {
             adjustedRate,
             AMOUNT,
             buyMarketSideLiquidity,
-            feeSchedule,
+            GAS_PRICE,
             exchangeProxyOverhead,
         );
 
@@ -144,7 +141,7 @@ describe('getComparisonPrices', async () => {
             adjustedRate,
             AMOUNT,
             sellMarketSideLiquidity,
-            feeSchedule,
+            GAS_PRICE,
             exchangeProxyOverhead,
         );
 
