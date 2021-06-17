@@ -543,8 +543,6 @@ const CURVE_POLYGON_ATRICRYPTO_TOKENS = [POLYGON_TOKENS.amDAI, POLYGON_TOKENS.am
 
 const createCurveExchangePool = (info: { tokens: string[]; pool: string; gasSchedule: number }) => ({
     exchangeFunctionSelector: CurveFunctionSelectors.exchange,
-    sellQuoteFunctionSelector: CurveFunctionSelectors.get_dy,
-    buyQuoteFunctionSelector: CurveFunctionSelectors.None,
     tokens: info.tokens,
     metaTokens: undefined,
     poolAddress: info.pool,
@@ -553,8 +551,6 @@ const createCurveExchangePool = (info: { tokens: string[]; pool: string; gasSche
 
 const createCurveExchangeUnderlyingPool = (info: { tokens: string[]; pool: string; gasSchedule: number }) => ({
     exchangeFunctionSelector: CurveFunctionSelectors.exchange_underlying,
-    sellQuoteFunctionSelector: CurveFunctionSelectors.get_dy_underlying,
-    buyQuoteFunctionSelector: CurveFunctionSelectors.None,
     tokens: info.tokens,
     metaTokens: undefined,
     poolAddress: info.pool,
@@ -563,8 +559,6 @@ const createCurveExchangeUnderlyingPool = (info: { tokens: string[]; pool: strin
 
 const createCurveMetaTriPool = (info: { tokens: string[]; pool: string; gasSchedule: number }) => ({
     exchangeFunctionSelector: CurveFunctionSelectors.exchange_underlying,
-    sellQuoteFunctionSelector: CurveFunctionSelectors.get_dy_underlying,
-    buyQuoteFunctionSelector: CurveFunctionSelectors.None,
     tokens: [...info.tokens, ...CURVE_TRI_POOL_MAINNET_TOKENS],
     metaTokens: info.tokens,
     poolAddress: info.pool,
@@ -573,8 +567,6 @@ const createCurveMetaTriPool = (info: { tokens: string[]; pool: string; gasSched
 
 const createCurveMetaTriBtcPool = (info: { tokens: string[]; pool: string; gasSchedule: number }) => ({
     exchangeFunctionSelector: CurveFunctionSelectors.exchange_underlying,
-    sellQuoteFunctionSelector: CurveFunctionSelectors.get_dy_underlying,
-    buyQuoteFunctionSelector: CurveFunctionSelectors.None,
     tokens: [...info.tokens, ...CURVE_TRI_BTC_POOL_TOKEN],
     metaTokens: info.tokens,
     poolAddress: info.pool,
@@ -583,8 +575,6 @@ const createCurveMetaTriBtcPool = (info: { tokens: string[]; pool: string; gasSc
 
 const createCurveExchangeV2Pool = (info: { tokens: string[]; pool: string; gasSchedule: number }) => ({
     exchangeFunctionSelector: CurveFunctionSelectors.exchange_v2,
-    sellQuoteFunctionSelector: CurveFunctionSelectors.get_dy_v2,
-    buyQuoteFunctionSelector: CurveFunctionSelectors.None,
     tokens: info.tokens,
     metaTokens: undefined,
     poolAddress: info.pool,
@@ -593,8 +583,6 @@ const createCurveExchangeV2Pool = (info: { tokens: string[]; pool: string; gasSc
 
 const createCurveV2MetaTriPool = (info: { tokens: string[]; pool: string; gasSchedule: number }) => ({
     exchangeFunctionSelector: CurveFunctionSelectors.exchange_underlying_v2,
-    sellQuoteFunctionSelector: CurveFunctionSelectors.get_dy_underlying_v2,
-    buyQuoteFunctionSelector: CurveFunctionSelectors.None,
     tokens: [...CURVE_POLYGON_ATRICRYPTO_UNDERLYING_TOKENS, ...info.tokens],
     metaTokens: info.tokens,
     poolAddress: info.pool,
@@ -876,8 +864,6 @@ export const XSIGMA_MAINNET_INFOS: { [name: string]: CurveInfo } = {
 export const SADDLE_MAINNET_INFOS: { [name: string]: CurveInfo } = {
     [SADDLE_POOLS.stables]: {
         exchangeFunctionSelector: CurveFunctionSelectors.swap,
-        sellQuoteFunctionSelector: CurveFunctionSelectors.calculateSwap,
-        buyQuoteFunctionSelector: CurveFunctionSelectors.None,
         poolAddress: SADDLE_POOLS.stables,
         tokens: [MAINNET_TOKENS.DAI, MAINNET_TOKENS.USDC, MAINNET_TOKENS.USDT],
         metaTokens: undefined,
@@ -885,8 +871,6 @@ export const SADDLE_MAINNET_INFOS: { [name: string]: CurveInfo } = {
     },
     [SADDLE_POOLS.bitcoins]: {
         exchangeFunctionSelector: CurveFunctionSelectors.swap,
-        sellQuoteFunctionSelector: CurveFunctionSelectors.calculateSwap,
-        buyQuoteFunctionSelector: CurveFunctionSelectors.None,
         poolAddress: SADDLE_POOLS.bitcoins,
         tokens: [MAINNET_TOKENS.tBTC, MAINNET_TOKENS.WBTC, MAINNET_TOKENS.RenBTC, MAINNET_TOKENS.sBTC],
         metaTokens: undefined,
@@ -897,8 +881,6 @@ export const SADDLE_MAINNET_INFOS: { [name: string]: CurveInfo } = {
 export const SMOOTHY_MAINNET_INFOS: { [name: string]: CurveInfo } = {
     [SMOOTHY_POOLS.syUSD]: {
         exchangeFunctionSelector: CurveFunctionSelectors.swap_uint256,
-        sellQuoteFunctionSelector: CurveFunctionSelectors.get_swap_amount,
-        buyQuoteFunctionSelector: CurveFunctionSelectors.None,
         poolAddress: SMOOTHY_POOLS.syUSD,
         tokens: [
             MAINNET_TOKENS.USDT,
@@ -918,8 +900,6 @@ export const SMOOTHY_MAINNET_INFOS: { [name: string]: CurveInfo } = {
 export const SMOOTHY_BSC_INFOS: { [name: string]: CurveInfo } = {
     [SMOOTHY_POOLS.syUSD]: {
         exchangeFunctionSelector: CurveFunctionSelectors.swap_uint256,
-        sellQuoteFunctionSelector: CurveFunctionSelectors.get_swap_amount,
-        buyQuoteFunctionSelector: CurveFunctionSelectors.None,
         poolAddress: SMOOTHY_POOLS.syUSD,
         tokens: [BSC_TOKENS.BUSD, BSC_TOKENS.USDT, BSC_TOKENS.USDC, BSC_TOKENS.DAI, BSC_TOKENS.PAX, BSC_TOKENS.UST],
         metaTokens: undefined,
@@ -930,8 +910,6 @@ export const SMOOTHY_BSC_INFOS: { [name: string]: CurveInfo } = {
 export const NERVE_BSC_INFOS: { [name: string]: CurveInfo } = {
     [NERVE_POOLS.threePool]: {
         exchangeFunctionSelector: CurveFunctionSelectors.swap,
-        sellQuoteFunctionSelector: CurveFunctionSelectors.calculateSwap,
-        buyQuoteFunctionSelector: CurveFunctionSelectors.None,
         poolAddress: NERVE_POOLS.threePool,
         tokens: [BSC_TOKENS.BUSD, BSC_TOKENS.USDT, BSC_TOKENS.USDC],
         metaTokens: undefined,

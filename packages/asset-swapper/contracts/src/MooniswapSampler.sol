@@ -47,7 +47,7 @@ contract MooniswapSampler is
         returns (uint256)
     {
         return _tradeMooniswapInternal(
-            IEtherTokenV06(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2),
+            _getNativeWrappedToken(),
             IERC20TokenV06(sellToken),
             IERC20TokenV06(buyToken),
             takerTokenAmount,
@@ -133,8 +133,8 @@ contract MooniswapSampler is
         returns (address pool)
     {
         // WETH is actually ETH in these pools and represented as address(0)
-        address _takerToken = takerToken == 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 ? address(0) : takerToken;
-        address _makerToken = makerToken == 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 ? address(0) : makerToken;
+        address _takerToken = takerToken == address(_getNativeWrappedToken()) ? address(0) : takerToken;
+        address _makerToken = makerToken == address(_getNativeWrappedToken()) ? address(0) : makerToken;
 
         try
             IMooniswapRegistry(registry).pools{gas: 300e3}(_takerToken, _makerToken)

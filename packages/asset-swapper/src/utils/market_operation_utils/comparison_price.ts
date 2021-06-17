@@ -27,7 +27,8 @@ export function getComparisonPrices(
     let wholeOrder: BigNumber | undefined;
     let feeInEth: BigNumber | number;
 
-    feeInEth = NATIVE_RFQT_GAS_USED.plus(exchangeProxyOverhead(SOURCE_FLAGS.RfqOrder)).times(gasPrice);
+    // Assuming EP overhead has been gas price adjusted
+    feeInEth = NATIVE_RFQT_GAS_USED.times(gasPrice).plus(exchangeProxyOverhead(SOURCE_FLAGS.RfqOrder));
 
     // Calc native order fee penalty in output unit (maker units for sells, taker unit for buys)
     const feePenalty = !marketSideLiquidity.outputAmountPerEth.isZero()

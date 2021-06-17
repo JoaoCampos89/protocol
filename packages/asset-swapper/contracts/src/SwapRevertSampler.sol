@@ -33,7 +33,17 @@ interface IHackedERC20 {
 
 contract SwapRevertSampler {
     using LibRichErrorsV06 for bytes;
+
+    /// @dev Fixed address to register and read Gas overhead introduced by Swap revert sampling
     address private constant GAS_OVERHEAD = 0xDeF1000000000000000000000000000000001337;
+    /// @dev Maximum approximate (positive) error rate when approximating a buy quote.
+    uint256 private constant APPROXIMATE_BUY_TARGET_EPSILON_BPS = 0.0005e4;
+    /// @dev Maximum iterations to perform when approximating a buy quote.
+    uint256 private constant APPROXIMATE_BUY_MAX_ITERATIONS = 3;
+    uint256 private constant ONE_HUNDED_PERCENT_BPS = 1e4;
+    /// @dev Upper limit of gas to give to a single Swap call
+    uint256 private constant CALL_STIPEND = 2e6;
+
 
     // solhint-disable no-empty-blocks
     /// @dev Payable fallback to receive ETH from Kyber/WETH.
@@ -138,24 +148,15 @@ contract SwapRevertSampler {
             IEtherTokenV06(payable(sellToken)).deposit{ value: amountIn }()
         { } catch { }
 
-        // IHackedERC20 hackedBuyToken = IHackedERC20(payable(buyToken));
-        // // Ensure the balance of the buyToken is 0
-        // try
-        //     hackedBuyToken._setBalance(address(this), 0)
-        // { } catch { }
-
-        // require(hackedSellToken.balanceOf(address(this)) == amountIn, "Failed to mint or deposit sellToken");
-        // require(hackedBuyToken.balanceOf(address(this)) == 0, "Balance of buyToken must be 0");
-
-        // // Burn any excess ETH to avoid balance issues for sources which use ETH directly
-        // address(0).transfer(address(this).balance);
+        // Burn any excess ETH to avoid balance issues for sources which use ETH directly
+        address(0).transfer(address(this).balance);
 
         uint256[] memory amountsOut = new uint256[](amountsIn.length);
         uint256[] memory gasUsed = new uint256[](amountsIn.length);
 
         for (uint256 i = 0; i < amountsIn.length; i++) {
             try
-                this._callRevert{gas: 2e6}(
+                this._callRevert{gas: CALL_STIPEND}(
                     selector,
                     sellToken,
                     buyToken,
@@ -199,6 +200,44 @@ contract SwapRevertSampler {
             // Parse the reverted sample datas
             (amountsOut, gasUsed) = abi.decode(reason, (uint256[], uint256[]));
         }
+    }
+
+    function _getNativeWrappedToken()
+        internal
+        view
+        returns (IEtherTokenV06)
+    {
+        uint256 chainId;
+        assembly {
+            chainId := chainid()
+        }
+        address token;
+        if (chainId == 1) {
+            // Ethereum Mainnet
+            token = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+        } else if (chainId == 3) {
+            // Ropsten
+            token = 0xc778417E063141139Fce010982780140Aa0cD5Ab;
+        } else if (chainId == 4) {
+            // Rinkeby
+            token = 0xc778417E063141139Fce010982780140Aa0cD5Ab;
+        } else if (chainId == 42) {
+            // Kovan
+            token = 0xd0A1E359811322d97991E03f863a0C30C2cF029C;
+        } else if (chainId == 56) {
+            // BSC 
+            token = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
+        } else if (chainId == 137) {
+            // Polygon
+            token = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
+        } else if (chainId == 1337) {
+            // 0x Ganache
+            token = 0x0B1ba0af832d7C05fD64161E0Db78E85978E8082;
+        }
+        if (token == address(0)) {
+            revert("No native wrapped token");
+        }
+        return IEtherTokenV06(token);
     }
 
     function _revertSingleSwapSample(
@@ -247,12 +286,6 @@ contract SwapRevertSampler {
         }
         return abi.decode(reason, (uint256, uint256));
     }
-
-    uint256 private constant ONE_HUNDED_PERCENT_BPS = 1e4;
-    /// @dev Maximum approximate (positive) error rate when approximating a buy quote.
-    uint256 private constant APPROXIMATE_BUY_TARGET_EPSILON_BPS = 0.0005e4;
-    /// @dev Maximum iterations to perform when approximating a buy quote.
-    uint256 private constant APPROXIMATE_BUY_MAX_ITERATIONS = 3;
 
     function _sampleSwapApproximateBuys(
         SwapRevertSamplerBuyQuoteOpts memory opts,
@@ -364,5 +397,6 @@ contract SwapRevertSampler {
         if (c / numerator != target) return 0;
         return (c + (denominator - 1)) / denominator;
     }
+
 
 }

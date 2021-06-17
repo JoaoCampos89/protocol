@@ -587,8 +587,7 @@ function calculateTwoHopQuoteInfo(
     const [firstHopOrder, secondHopOrder] = optimizedOrders;
     const [firstHopFill] = firstHopOrder.fills;
     const [secondHopFill] = secondHopOrder.fills;
-    // TODO jacob is this inclusive of both legs?
-    const gas = new BigNumber(firstHopFill.gasUsed).toNumber();
+    const gas = firstHopOrder.gasUsed.plus(secondHopFill.gasUsed).toNumber();
     return {
         bestCaseQuoteInfo: {
             makerAmount: operation === MarketOperation.Sell ? secondHopFill.output : secondHopFill.input,

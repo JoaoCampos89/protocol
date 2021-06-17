@@ -27,9 +27,7 @@ export function getTwoHopAdjustedRate(
         SOURCE_FLAGS.MultiHop |
             SOURCE_FLAGS[fillData.firstHopSource.source] |
             SOURCE_FLAGS[fillData.secondHopSource.source],
-    )
-        .plus(twoHopQuote.gasUsed)
-        .times(gasPrice);
+    ).plus(twoHopQuote.gasUsed.times(gasPrice));
     const penalty = outputAmountPerEth.times(costInEth);
     const adjustedOutput = side === MarketOperation.Sell ? output.minus(penalty) : output.plus(penalty);
     return side === MarketOperation.Sell ? adjustedOutput.div(input) : input.div(adjustedOutput);

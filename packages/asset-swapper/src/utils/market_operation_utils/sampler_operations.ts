@@ -1063,13 +1063,14 @@ export class SamplerOperations {
             subOps,
             (results: MeasuredSamplerResult[]) => {
                 return subOps.map((op, i) => {
-                    return results[i].samples.map((output, j) => ({
+                    const dexSamples = results[i].samples.map((output, j) => ({
                         source: op.source,
                         output,
                         input: takerFillAmounts[j],
                         fillData: op.fillData,
                         gasUsed: results[i].gasUsed[j],
                     }));
+                    return dexSamples;
                 });
             },
             () => [],

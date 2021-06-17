@@ -97,16 +97,11 @@ contract HackedERC20 {
         }
         (
             ShadowedAmount memory sAllowance,
-            uint256 gasOverhead
         ) = _getSyncedAllowance(msg.sender, spender);
 
         sAllowance.shadowedAmount = amount;
         _writeSyncedAllowance(msg.sender, spender, sAllowance);
 
-        // Update the global gas overhead from a approval sync
-        try
-            GasOverhead(GAS_OVERHEAD).addOverhead(gasOverhead + DELEGATE_CALL_OVERHEAD, gasleft())
-        { } catch { }
         return true;
     }
 

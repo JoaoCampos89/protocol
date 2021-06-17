@@ -54,7 +54,7 @@ contract BancorSampler is
         returns (uint256)
     {
         return _tradeBancorInternal(
-            IEtherTokenV06(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2),
+            _getNativeWrappedToken(),
             IERC20TokenV06(buyToken),
             takerTokenAmount,
             bridgeData
