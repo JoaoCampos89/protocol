@@ -17,6 +17,80 @@ export interface MeasuredSamplerContractCall<
     callback?: (callResults: string, fillData: TFillData) => MeasuredSamplerResult;
 }
 
+class PathDeregister {
+    private static _instance: PathDeregister;
+    // Presence in this registry with a negtive number indicates the Path has been deregistered
+    private readonly _registry: { [key in ERC20BridgeSource]?: { [key: string]: number } } = {};
+    private readonly MAX_RESULTS = 100;
+
+    public static createKey(args: any[]): string {
+        return args
+            .map(a => {
+                if (typeof a === 'object' && a !== null) {
+                    return Object.values(a).join('-');
+                }
+                if (Array.isArray(a)) {
+                    return a.join('-');
+                }
+                return a.toString();
+            })
+            .join('-');
+    }
+
+    public static getInstance(): PathDeregister {
+        if (!PathDeregister._instance) {
+            PathDeregister._instance = new PathDeregister();
+        }
+        return PathDeregister._instance;
+    }
+
+    private static _getRandom(): number {
+        // tslint:disable-next-line: custom-no-magic-numbers
+        return Math.floor(Math.random() * (100 - 0 + 1)) + 0;
+    }
+
+    public isDeregistered(source: ERC20BridgeSource, key: string): boolean {
+        if (!this._registry[source]) {
+            this._registry[source] = {};
+        }
+        // Randomly allow the ops to be re-registered
+        if (PathDeregister._getRandom() === 1) {
+            return false;
+        }
+        return this._registry[source]![key] < 0;
+    }
+
+    // Registers a successful result. Upon having one single success
+    // a Path is no longer deregistered
+    public handleResult(source: ERC20BridgeSource, key: string, result: MeasuredSamplerResult): void {
+        if (!this._registry[source]) {
+            this._registry[source] = {};
+        }
+
+        // Defaults to 0
+        if (!this._registry[source]![key]) {
+            this._registry[source]![key] = 0;
+        }
+
+        if (this._didSucceed(result)) {
+            if (this._registry[source]![key] < 0) {
+                this._registry[source]![key] = 0;
+            }
+            this._registry[source]![key] = Math.min(this.MAX_RESULTS, this._registry[source]![key] + 1);
+        } else {
+            console.log(`Deregistering ${source} ${key} ${result.samples} ${this._registry[source]![key]}`);
+            this._registry[source]![key] = Math.max(-this.MAX_RESULTS, this._registry[source]![key] - 1);
+        }
+    }
+
+    // tslint:disable-next-line: prefer-function-over-method
+    private _didSucceed(result: MeasuredSamplerResult): boolean {
+        const nonZeroSample = result.samples.find(s => s.isGreaterThan(0));
+        return nonZeroSample !== undefined && result.samples.length > 0;
+    }
+}
+
+// tslint:disable-next-line: max-classes-per-file
 export class MeasuredSamplerContractOperation<
     TFunc extends (...args: any[]) => ContractFunctionObj<any>,
     TFillData extends FillData = FillData
@@ -27,9 +101,15 @@ export class MeasuredSamplerContractOperation<
     private readonly _samplerFunction: TFunc;
     private readonly _params: Parameters<TFunc>;
     private readonly _callback?: (callResults: string, fillData: TFillData) => MeasuredSamplerResult;
+    private readonly _deregisterKey: string | undefined;
+    private readonly _deregisterable: boolean;
 
     constructor(
-        opts: { source: ERC20BridgeSource; fillData?: TFillData } & MeasuredSamplerContractCall<TFunc, TFillData>,
+        opts: {
+            source: ERC20BridgeSource;
+            fillData?: TFillData;
+            deregisterable?: boolean;
+        } & MeasuredSamplerContractCall<TFunc, TFillData>,
     ) {
         this.source = opts.source;
         this.fillData = opts.fillData || ({} as TFillData); // tslint:disable-line:no-object-literal-type-assertion
@@ -37,6 +117,10 @@ export class MeasuredSamplerContractOperation<
         this._samplerFunction = opts.function;
         this._params = opts.params;
         this._callback = opts.callback;
+        this._deregisterable = opts.deregisterable || false;
+        if (this._deregisterable) {
+            this._deregisterKey = PathDeregister.createKey(this._params.slice(0, this._params.length - 1));
+        }
     }
 
     public encodeCall(): string {
@@ -44,17 +128,24 @@ export class MeasuredSamplerContractOperation<
             .bind(this._samplerContract)(...this._params)
             .getABIEncodedTransactionData();
     }
+
     public handleCallResults(callResults: string): MeasuredSamplerResult {
+        let result: MeasuredSamplerResult;
         if (this._callback !== undefined) {
-            return this._callback(callResults, this.fillData);
+            result = this._callback(callResults, this.fillData);
         } else {
             const [gasUsed, samples] = this._samplerContract.getABIDecodedReturnData<[BigNumber[], BigNumber[]]>(
                 this._samplerFunction.name,
                 callResults,
             );
-            return { gasUsed, samples };
+            result = { gasUsed, samples };
         }
+        if (this._deregisterKey) {
+            PathDeregister.getInstance().handleResult(this.source, this._deregisterKey, result);
+        }
+        return result;
     }
+
     public handleRevert(callResults: string): MeasuredSamplerResult {
         let msg = callResults;
         try {
@@ -69,6 +160,17 @@ export class MeasuredSamplerContractOperation<
                 2,
             )}`,
         );
-        return { gasUsed: [], samples: [] };
+        const result = { gasUsed: [], samples: [] };
+        if (this._deregisterKey) {
+            PathDeregister.getInstance().handleResult(this.source, this._deregisterKey, result);
+        }
+        return result;
+    }
+
+    public isDeregistered(): boolean {
+        if (this._deregisterKey) {
+            return PathDeregister.getInstance().isDeregistered(this.source, this._deregisterKey);
+        }
+        return false;
     }
 }

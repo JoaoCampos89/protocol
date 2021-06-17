@@ -446,6 +446,7 @@ export interface MeasuredSourceQuoteOperation<TFillData extends FillData = FillD
     extends BatchedOperation<MeasuredSamplerResult> {
     readonly source: ERC20BridgeSource;
     fillData: TFillData;
+    isDeregistered?: () => boolean;
 }
 
 export interface SourceQuoteOperation<TFillData extends FillData = FillData> extends BatchedOperation<BigNumber[]> {

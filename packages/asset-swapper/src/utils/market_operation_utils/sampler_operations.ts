@@ -222,6 +222,7 @@ export class SamplerOperations {
         takerFillAmounts: BigNumber[],
     ): MeasuredSourceQuoteOperation<KyberFillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source: ERC20BridgeSource.Kyber,
             contract: this._samplerContract,
             function: this._samplerContract.sampleSellsFromKyberNetwork,
@@ -268,6 +269,7 @@ export class SamplerOperations {
         takerFillAmounts: BigNumber[],
     ): MeasuredSourceQuoteOperation<KyberDmmFillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source: ERC20BridgeSource.KyberDmm,
             contract: this._samplerContract,
             function: this._samplerContract.sampleSellsFromKyberDmm,
@@ -313,6 +315,7 @@ export class SamplerOperations {
         takerFillAmounts: BigNumber[],
     ): MeasuredSourceQuoteOperation<GenericRouterFillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source: ERC20BridgeSource.Uniswap,
             fillData: { router },
             contract: this._samplerContract,
@@ -343,6 +346,7 @@ export class SamplerOperations {
         source: ERC20BridgeSource = ERC20BridgeSource.UniswapV2,
     ): MeasuredSourceQuoteOperation<UniswapV2FillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source,
             fillData: { tokenAddressPath, router },
             contract: this._samplerContract,
@@ -374,6 +378,7 @@ export class SamplerOperations {
         gasCost: number,
     ): MeasuredSourceQuoteOperation<LiquidityProviderFillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source: ERC20BridgeSource.LiquidityProvider,
             fillData: {
                 poolAddress: providerAddress,
@@ -413,6 +418,7 @@ export class SamplerOperations {
         takerFillAmounts: BigNumber[],
     ): MeasuredSourceQuoteOperation<GenericRouterFillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source: ERC20BridgeSource.Eth2Dai,
             fillData: { router },
             contract: this._samplerContract,
@@ -444,6 +450,7 @@ export class SamplerOperations {
         source: ERC20BridgeSource = ERC20BridgeSource.Curve,
     ): MeasuredSourceQuoteOperation<CurveFillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source,
             fillData: {
                 pool,
@@ -452,6 +459,37 @@ export class SamplerOperations {
             },
             contract: this._samplerContract,
             function: this._samplerContract.sampleSellsFromCurve,
+            params: [
+                {
+                    curveAddress: pool.poolAddress,
+                    exchangeFunctionSelector: pool.exchangeFunctionSelector,
+                    fromCoinIdx: new BigNumber(pool.takerTokenIdx),
+                    toCoinIdx: new BigNumber(pool.makerTokenIdx),
+                },
+                takerToken,
+                makerToken,
+                takerFillAmounts,
+            ],
+        });
+    }
+
+    public getCurveV2SellQuotes(
+        pool: CurveDetailedInfo,
+        makerToken: string,
+        takerToken: string,
+        takerFillAmounts: BigNumber[],
+        source: ERC20BridgeSource = ERC20BridgeSource.Curve,
+    ): MeasuredSourceQuoteOperation<CurveFillData> {
+        return new MeasuredSamplerContractOperation({
+            deregisterable: true,
+            source,
+            fillData: {
+                pool,
+                fromTokenIdx: pool.takerTokenIdx,
+                toTokenIdx: pool.makerTokenIdx,
+            },
+            contract: this._samplerContract,
+            function: this._samplerContract.sampleSellsFromCurveV2,
             params: [
                 {
                     curveAddress: pool.poolAddress,
@@ -504,6 +542,7 @@ export class SamplerOperations {
         source: ERC20BridgeSource,
     ): MeasuredSourceQuoteOperation<BalancerV2FillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source,
             fillData: { ...poolInfo },
             contract: this._samplerContract,
@@ -536,6 +575,7 @@ export class SamplerOperations {
         source: ERC20BridgeSource,
     ): MeasuredSourceQuoteOperation<BalancerFillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: false,
             source,
             fillData: { poolAddress },
             contract: this._samplerContract,
@@ -567,6 +607,7 @@ export class SamplerOperations {
         takerFillAmounts: BigNumber[],
     ): MeasuredSourceQuoteOperation<GenericRouterFillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source: ERC20BridgeSource.MStable,
             fillData: { router },
             contract: this._samplerContract,
@@ -598,6 +639,7 @@ export class SamplerOperations {
     ): MeasuredSourceQuoteOperation<BancorFillData> {
         const paths = this._bancorService ? this._bancorService.getPaths(takerToken, makerToken) : [];
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source: ERC20BridgeSource.Bancor,
             contract: this._samplerContract,
             function: this._samplerContract.sampleSellsFromBancor,
@@ -643,6 +685,7 @@ export class SamplerOperations {
         takerFillAmounts: BigNumber[],
     ): MeasuredSourceQuoteOperation<MooniswapFillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source: ERC20BridgeSource.Mooniswap,
             contract: this._samplerContract,
             function: this._samplerContract.sampleSellsFromMooniswap,
@@ -686,6 +729,7 @@ export class SamplerOperations {
         source: ERC20BridgeSource = ERC20BridgeSource.UniswapV3,
     ): MeasuredSourceQuoteOperation<UniswapV3FillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source,
             contract: this._samplerContract,
             function: this._samplerContract.sampleSellsFromUniswapV3,
@@ -747,6 +791,7 @@ export class SamplerOperations {
             const firstHopOps = this._getSellQuoteOperations(_sources, intermediateToken, takerToken, [ZERO_AMOUNT]);
             const secondHopOps = this._getSellQuoteOperations(_sources, makerToken, intermediateToken, [ZERO_AMOUNT]);
             return new MeasuredSamplerContractOperation({
+                deregisterable: false,
                 contract: this._samplerContract,
                 source: ERC20BridgeSource.MultiHop,
                 function: this._samplerContract.sampleTwoHopSell,
@@ -814,6 +859,7 @@ export class SamplerOperations {
                 new BigNumber(0),
             ]);
             return new MeasuredSamplerContractOperation({
+                deregisterable: false,
                 contract: this._samplerContract,
                 source: ERC20BridgeSource.MultiHop,
                 function: this._samplerContract.sampleTwoHopBuy,
@@ -863,6 +909,7 @@ export class SamplerOperations {
         source: ERC20BridgeSource = ERC20BridgeSource.Shell,
     ): MeasuredSourceQuoteOperation<ShellFillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source,
             fillData: { poolAddress, gasUsed: [] },
             contract: this._samplerContract,
@@ -894,6 +941,7 @@ export class SamplerOperations {
         takerFillAmounts: BigNumber[],
     ): MeasuredSourceQuoteOperation<DODOFillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source: ERC20BridgeSource.Dodo,
             contract: this._samplerContract,
             function: this._samplerContract.sampleSellsFromDODO,
@@ -941,6 +989,7 @@ export class SamplerOperations {
         takerFillAmounts: BigNumber[],
     ): MeasuredSourceQuoteOperation<DODOFillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source: ERC20BridgeSource.DodoV2,
             contract: this._samplerContract,
             function: this._samplerContract.sampleSellsFromDODOV2,
@@ -986,6 +1035,7 @@ export class SamplerOperations {
         takerFillAmounts: BigNumber[],
     ): MeasuredSourceQuoteOperation<MakerPsmFillData> {
         return new MeasuredSamplerContractOperation({
+            deregisterable: true,
             source: ERC20BridgeSource.MakerPsm,
             fillData: {
                 isSellOperation: true,
@@ -1179,7 +1229,6 @@ export class SamplerOperations {
                             ),
                         );
                     case ERC20BridgeSource.Curve:
-                    case ERC20BridgeSource.CurveV2:
                     case ERC20BridgeSource.Swerve:
                     case ERC20BridgeSource.SnowSwap:
                     case ERC20BridgeSource.Nerve:
@@ -1190,6 +1239,10 @@ export class SamplerOperations {
                     case ERC20BridgeSource.Smoothy:
                         return getCurveLikeInfosForPair(this.chainId, takerToken, makerToken, source).map(pool =>
                             this.getCurveSellQuotes(pool, makerToken, takerToken, takerFillAmounts, source),
+                        );
+                    case ERC20BridgeSource.CurveV2:
+                        return getCurveLikeInfosForPair(this.chainId, takerToken, makerToken, source).map(pool =>
+                            this.getCurveV2SellQuotes(pool, makerToken, takerToken, takerFillAmounts, source),
                         );
                     case ERC20BridgeSource.Shell:
                     case ERC20BridgeSource.Component:
@@ -1347,7 +1400,9 @@ export class SamplerOperations {
                 }
             }),
         );
-        return allOps;
+        const registeredOpts = allOps.filter(op => op.isDeregistered && !op.isDeregistered());
+        console.log(`Filtered ${allOps.length - registeredOpts.length} ops`);
+        return registeredOpts;
     }
 
     private _getBuyQuoteOperations(

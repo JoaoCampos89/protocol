@@ -24,6 +24,7 @@ import "./BalancerSampler.sol";
 import "./BalancerV2Sampler.sol";
 import "./BancorSampler.sol";
 import "./CurveSampler.sol";
+import "./CurveV2Sampler.sol";
 import "./DODOSampler.sol";
 import "./DODOV2Sampler.sol";
 import "./Eth2DaiSampler.sol";
@@ -48,6 +49,7 @@ contract ERC20BridgeSampler is
     BalancerV2Sampler,
     BancorSampler,
     CurveSampler,
+    CurveV2Sampler,
     DODOSampler,
     DODOV2Sampler,
     Eth2DaiSampler,

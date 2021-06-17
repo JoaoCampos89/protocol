@@ -170,6 +170,10 @@ contract SwapRevertSampler {
                 (amountsOut[i], gasUsed[i]) = _parseRevertedSingleSwapSample(reason);
                 // If we detect the amount out is 0 then we return early
                 // rather than continue performing excess work
+
+                // Some sources (Balancer) display issues, especially with small amounts
+                // Where the amountsOut can range, e.g 448,0,0,0,2476,3048,0,4279,4941,0,0,7133,
+
                 if (amountsOut[i] == 0) {
                     break;
                 }
