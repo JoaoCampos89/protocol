@@ -21,7 +21,7 @@ class PathDeregister {
     private static _instance: PathDeregister;
     // Presence in this registry with a negtive number indicates the Path has been deregistered
     private readonly _registry: { [key in ERC20BridgeSource]?: { [key: string]: number } } = {};
-    private readonly MAX_RESULTS = 100;
+    private readonly _MAX_RESULTS = 100;
 
     public static createKey(args: any[]): string {
         return args
@@ -76,10 +76,10 @@ class PathDeregister {
             if (this._registry[source]![key] < 0) {
                 this._registry[source]![key] = 0;
             }
-            this._registry[source]![key] = Math.min(this.MAX_RESULTS, this._registry[source]![key] + 1);
+            this._registry[source]![key] = Math.min(this._MAX_RESULTS, this._registry[source]![key] + 1);
         } else {
-            console.log(`Deregistering ${source} ${key} ${result.samples} ${this._registry[source]![key]}`);
-            this._registry[source]![key] = Math.max(-this.MAX_RESULTS, this._registry[source]![key] - 1);
+            logUtils.log(`Deregistering ${source} ${key} ${result.samples} ${this._registry[source]![key]}`);
+            this._registry[source]![key] = Math.max(-this._MAX_RESULTS, this._registry[source]![key] - 1);
         }
     }
 
@@ -103,12 +103,14 @@ export class MeasuredSamplerContractOperation<
     private readonly _callback?: (callResults: string, fillData: TFillData) => MeasuredSamplerResult;
     private readonly _deregisterKey: string | undefined;
     private readonly _deregisterable: boolean;
+    private readonly _log: boolean;
 
     constructor(
         opts: {
             source: ERC20BridgeSource;
             fillData?: TFillData;
             deregisterable?: boolean;
+            log?: boolean;
         } & MeasuredSamplerContractCall<TFunc, TFillData>,
     ) {
         this.source = opts.source;
@@ -118,6 +120,7 @@ export class MeasuredSamplerContractOperation<
         this._params = opts.params;
         this._callback = opts.callback;
         this._deregisterable = opts.deregisterable || false;
+        this._log = opts.log || false;
         if (this._deregisterable) {
             this._deregisterKey = PathDeregister.createKey(this._params.slice(0, this._params.length - 1));
         }
@@ -142,6 +145,9 @@ export class MeasuredSamplerContractOperation<
         }
         if (this._deregisterKey) {
             PathDeregister.getInstance().handleResult(this.source, this._deregisterKey, result);
+        }
+        if (this._log) {
+            logUtils.log({ source: this.source, fillData: this.fillData, ...result });
         }
         return result;
     }

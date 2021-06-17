@@ -542,7 +542,7 @@ export class SamplerOperations {
         source: ERC20BridgeSource,
     ): MeasuredSourceQuoteOperation<BalancerV2FillData> {
         return new MeasuredSamplerContractOperation({
-            deregisterable: true,
+            deregisterable: false,
             source,
             fillData: { ...poolInfo },
             contract: this._samplerContract,

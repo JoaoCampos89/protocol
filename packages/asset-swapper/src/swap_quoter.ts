@@ -587,7 +587,7 @@ function calculateTwoHopQuoteInfo(
     const [firstHopOrder, secondHopOrder] = optimizedOrders;
     const [firstHopFill] = firstHopOrder.fills;
     const [secondHopFill] = secondHopOrder.fills;
-    const gas = firstHopOrder.gasUsed.plus(secondHopFill.gasUsed).toNumber();
+    const gas = (firstHopOrder.gasUsed || ZERO_AMOUNT).plus(secondHopFill.gasUsed || ZERO_AMOUNT).toNumber();
     return {
         bestCaseQuoteInfo: {
             makerAmount: operation === MarketOperation.Sell ? secondHopFill.output : secondHopFill.input,
