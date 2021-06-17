@@ -38,9 +38,9 @@ const dexQuotes: DexSample[] = [kyberSample1, uniswapSample1];
 
 const exchangeProxyOverhead = (sourceFlags: number) => {
     if ([SOURCE_FLAGS.RfqOrder].includes(sourceFlags)) {
-        return new BigNumber(20e3).times(GAS_PRICE);
+        return new BigNumber(20e3);
     } else {
-        return new BigNumber(200e3).times(GAS_PRICE);
+        return new BigNumber(200e3);
     }
 };
 
@@ -104,9 +104,9 @@ describe('getComparisonPrices', async () => {
         );
 
         // expected outcome
-        const EXPECTED_PRICE = new BigNumber('500.6');
+        const EXPECTED_PRICE = new BigNumber('500.3');
 
-        expect(comparisonPrices.wholeOrder).to.deep.eq(EXPECTED_PRICE);
+        expect(comparisonPrices.wholeOrder).to.be.bignumber.eq(EXPECTED_PRICE);
     });
     it('should create a proper comparison price for Buys', () => {
         // test buying 10 ETH with DAI
@@ -126,9 +126,9 @@ describe('getComparisonPrices', async () => {
         );
 
         // expected outcome
-        const EXPECTED_PRICE = new BigNumber('0.0020024029');
+        const EXPECTED_PRICE = new BigNumber('0.0020012007');
 
-        expect(comparisonPrices.wholeOrder).to.deep.eq(EXPECTED_PRICE);
+        expect(comparisonPrices.wholeOrder).to.be.bignumber.eq(EXPECTED_PRICE);
     });
     it('should not return a price if takerAmount is < 0', () => {
         // test selling 0.00001 ETH for DAI

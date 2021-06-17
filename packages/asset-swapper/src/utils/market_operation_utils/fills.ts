@@ -111,6 +111,7 @@ function nativeOrdersToFills(
             side === MarketOperation.Sell ? clippedOutput.minus(outputPenalty) : clippedOutput.plus(outputPenalty);
         const adjustedRate =
             side === MarketOperation.Sell ? adjustedOutput.div(clippedInput) : clippedInput.div(adjustedOutput);
+
         // Skip orders with rates that are <= 0.
         if (adjustedRate.lte(0)) {
             continue;
@@ -174,6 +175,7 @@ function dexSamplesToFills(
                 : inputAmountPerEth.times(fee).times(output.dividedToIntegerBy(input));
         }
         const adjustedOutput = side === MarketOperation.Sell ? output.minus(penalty) : output.plus(penalty);
+        const adjustedRate = side === MarketOperation.Sell ? adjustedOutput.div(input) : input.div(adjustedOutput);
 
         fills.push({
             sourcePathId,

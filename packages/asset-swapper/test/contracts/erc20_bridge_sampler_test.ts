@@ -18,7 +18,8 @@ import { DummyLiquidityProviderContract, TestERC20BridgeSamplerContract } from '
 // tslint:disable: custom-no-magic-numbers
 
 const { NULL_ADDRESS } = constants;
-blockchainTests('erc20-bridge-sampler', env => {
+// jacob: Skip until we can override in Ganache
+blockchainTests.skip('erc20-bridge-sampler', env => {
     let testContract: TestERC20BridgeSamplerContract;
     const RATE_DENOMINATOR = constants.ONE_ETHER;
     const MIN_RATE = new BigNumber('0.01');

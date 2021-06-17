@@ -767,6 +767,16 @@ export class MarketOperationUtils {
         takerToken: string,
         makerToken: string,
     ): Promise<{ overrides: { [address: string]: { code: string } } }> {
+        const overrides: { [address: string]: { code: string } } = {};
+        // Set the gas overhead counter to a known address
+        overrides[GAS_OVERHEAD_ADDRESS] = { code: GAS_OVERHEAD_BYTECODE };
+        // Set the fixed impl of a HackedERC20 bytecode, all other tokens use a delegate call
+        overrides[HACKED_ERC20_ADDRESS] = { code: HACKED_ERC20_BYTECODE };
+
+        if (!this._sampler.tokenAdjacencyGraph) {
+            return { overrides };
+        }
+
         // Allow the tokens bytecode to be overwritten using geths override functionality
         const intermediateTokens = getIntermediateTokens(makerToken, takerToken, this._sampler.tokenAdjacencyGraph);
         const tokens = [takerToken, makerToken, ...intermediateTokens].map(t => t.toLowerCase());
@@ -785,7 +795,6 @@ export class MarketOperationUtils {
         const tokenCodes = tokens.map(t => this._contractCodeByAddress[t]!);
 
         const nativeWrappedToken = NATIVE_FEE_TOKEN_BY_CHAIN_ID[this._sampler.chainId];
-        const overrides: { [address: string]: { code: string } } = {};
         tokens.forEach((token, i) => {
             // Skip overriding WETH like token as this can be used directly with a deposit
             if (token === nativeWrappedToken) {
@@ -805,11 +814,6 @@ export class MarketOperationUtils {
             // Specify the original implementation at a new address (+1)
             overrides[tokenImplAddress] = { code: tokenCodes[i] };
         });
-
-        // Set the gas overhead counter to a known address
-        overrides[GAS_OVERHEAD_ADDRESS] = { code: GAS_OVERHEAD_BYTECODE };
-        // Set the fixed impl of a HackedERC20 bytecode, all other tokens use a delegate call
-        overrides[HACKED_ERC20_ADDRESS] = { code: HACKED_ERC20_BYTECODE };
 
         return { overrides };
     }

@@ -21,9 +21,11 @@ import { MarketOperationUtils } from '../src/utils/market_operation_utils/';
 import {
     BUY_SOURCE_FILTER_BY_CHAIN_ID,
     DEFAULT_GET_MARKET_ORDERS_OPTS,
+    NATIVE_RFQT_GAS_USED,
     POSITIVE_INF,
     SELL_SOURCE_FILTER_BY_CHAIN_ID,
     SOURCE_FLAGS,
+    ZERO_AMOUNT,
 } from '../src/utils/market_operation_utils/constants';
 import { createFills } from '../src/utils/market_operation_utils/fills';
 import { PoolsCache } from '../src/utils/market_operation_utils/pools_cache';
@@ -131,6 +133,7 @@ describe('MarketOperationUtils tests', () => {
     const contractAddresses = {
         ...getContractAddressesForChainOrThrow(CHAIN_ID),
     };
+    let DEFAULT_DEX_GAS_USED = new BigNumber(100000);
 
     function getMockedQuoteRequestor(
         type: 'indicative' | 'firm',
@@ -207,6 +210,7 @@ describe('MarketOperationUtils tests', () => {
         inputs: Numberish[],
         rates: Numberish[],
         fillData?: FillData,
+        gasUsed?: BigNumber,
     ): DexSample[] {
         const samples: DexSample[] = [];
         inputs.forEach((input, i) => {
@@ -220,7 +224,7 @@ describe('MarketOperationUtils tests', () => {
                     .times(rate)
                     .plus(i === 0 ? 0 : samples[i - 1].output)
                     .integerValue(),
-                gasUsed: new BigNumber(1),
+                gasUsed: gasUsed || DEFAULT_DEX_GAS_USED,
             });
         });
         return samples;
@@ -236,7 +240,10 @@ describe('MarketOperationUtils tests', () => {
         liquidityProviderAddress?: string,
     ) => DexSample[][];
 
-    function createGetMultipleSellQuotesOperationFromRates(rates: RatesBySource): GetMultipleQuotesOperation {
+    function createGetMultipleSellQuotesOperationFromRates(
+        rates: RatesBySource,
+        gasSchedule: Partial<{ [key in ERC20BridgeSource]: BigNumber }> = {},
+    ): GetMultipleQuotesOperation {
         return (
             sources: ERC20BridgeSource[],
             _makerToken: string,
@@ -244,11 +251,16 @@ describe('MarketOperationUtils tests', () => {
             fillAmounts: BigNumber[],
             _wethAddress: string,
         ) => {
-            return BATCH_SOURCE_FILTERS.getAllowed(sources).map(s => createSamplesFromRates(s, fillAmounts, rates[s]));
+            return BATCH_SOURCE_FILTERS.getAllowed(sources).map(s =>
+                createSamplesFromRates(s, fillAmounts, rates[s], undefined, gasSchedule[s]),
+            );
         };
     }
 
-    function createGetMultipleBuyQuotesOperationFromRates(rates: RatesBySource): GetMultipleQuotesOperation {
+    function createGetMultipleBuyQuotesOperationFromRates(
+        rates: RatesBySource,
+        gasSchedule: Partial<{ [key in ERC20BridgeSource]: BigNumber }> = {},
+    ): GetMultipleQuotesOperation {
         return (
             sources: ERC20BridgeSource[],
             _makerToken: string,
@@ -261,6 +273,7 @@ describe('MarketOperationUtils tests', () => {
                     s,
                     fillAmounts,
                     rates[s].map(r => new BigNumber(1).div(r)),
+                    gasSchedule[s],
                 ),
             );
         };
@@ -702,13 +715,13 @@ describe('MarketOperationUtils tests', () => {
                         mou.getMarketSellLiquidityAsync(TypeMoq.It.isAny(), TypeMoq.It.isAny(), TypeMoq.It.isAny()),
                     )
                     .returns(async () => {
-                        return {
+                        const marketSellLiquidity: MarketSideLiquidity = {
                             side: MarketOperation.Sell,
                             inputAmount: Web3Wrapper.toBaseUnitAmount(1, 18),
                             inputToken: MAKER_TOKEN,
                             outputToken: TAKER_TOKEN,
-                            inputAmountPerEth: Web3Wrapper.toBaseUnitAmount(1, 18),
-                            outputAmountPerEth: Web3Wrapper.toBaseUnitAmount(1, 6),
+                            inputAmountPerEth: new BigNumber(1), // selling ETH so 1:1
+                            outputAmountPerEth: new BigNumber(0.00000000241319391), // buying USDC (6 decimal)
                             quoteSourceFilters: new SourceFilters(),
                             makerTokenDecimals: 6,
                             takerTokenDecimals: 18,
@@ -734,10 +747,12 @@ describe('MarketOperationUtils tests', () => {
                             },
                             isRfqSupported: true,
                         };
+
+                        return marketSellLiquidity;
                     });
                 const result = await mockedMarketOpUtils.object.getOptimizerResultAsync(
                     ORDERS,
-                    Web3Wrapper.toBaseUnitAmount(1, 18),
+                    Web3Wrapper.toBaseUnitAmount(10, 18),
                     MarketOperation.Sell,
                     {
                         ...DEFAULT_OPTS,
@@ -1064,11 +1079,13 @@ describe('MarketOperationUtils tests', () => {
             it('factors in fees for native orders', async () => {
                 // Native orders will have the best rates but have fees,
                 // dropping their effective rates.
+                const gasPrice = new BigNumber(1000e9);
+                DEFAULT_DEX_GAS_USED = new BigNumber(100000);
                 const rates: RatesBySource = {
-                    [ERC20BridgeSource.Native]: [1, 0.99, 0.98, 0.97], // Effectively [0.94, 0.93, 0.92, 0.91]
-                    [ERC20BridgeSource.Uniswap]: [0.96, 0.1, 0.1, 0.1],
-                    [ERC20BridgeSource.Eth2Dai]: [0.95, 0.1, 0.1, 0.1],
-                    [ERC20BridgeSource.Kyber]: [0.1, 0.1, 0.1, 0.1],
+                    [ERC20BridgeSource.Native]: [1, 0.96, 0.94, 0.92], // Effectively [0.98, 0.94, 0.92, 0.90]
+                    [ERC20BridgeSource.Uniswap]: [0.96, 0.1, 0.1, 0.1], // [0.95]
+                    [ERC20BridgeSource.Eth2Dai]: [0.95, 0.1, 0.1, 0.1], // [0.94]
+                    [ERC20BridgeSource.Kyber]: [0.1, 0.1, 0.1, 0.1], // [0.094]
                 };
                 replaceSamplerOps({
                     getSellQuotes: createGetMultipleSellQuotesOperationFromRates(rates),
@@ -1078,7 +1095,7 @@ describe('MarketOperationUtils tests', () => {
                     marketOperationUtils,
                     createOrdersFromSellRates(FILL_AMOUNT, rates[ERC20BridgeSource.Native]),
                     FILL_AMOUNT,
-                    { ...DEFAULT_OPTS, numSamples: 4 },
+                    { ...DEFAULT_OPTS, numSamples: 4, gasPrice },
                 );
                 const improvedOrders = improvedOrdersResponse.optimizedOrders;
                 const orderSources = improvedOrders.map(o => o.fills[0].source);
@@ -1511,12 +1528,13 @@ describe('MarketOperationUtils tests', () => {
             it('factors in fees for native orders', async () => {
                 // Native orders will have the best rates but have fees,
                 // dropping their effective rates.
+                const gasPrice = new BigNumber(1000e9);
+                DEFAULT_DEX_GAS_USED = new BigNumber(100000);
                 const rates: RatesBySource = {
-                    ...ZERO_RATES,
-                    [ERC20BridgeSource.Native]: [1, 0.99, 0.98, 0.97], // Effectively [0.94, ~0.93, ~0.92, ~0.91]
-                    [ERC20BridgeSource.Uniswap]: [0.96, 0.1, 0.1, 0.1],
-                    [ERC20BridgeSource.Eth2Dai]: [0.95, 0.1, 0.1, 0.1],
-                    [ERC20BridgeSource.Kyber]: [0.1, 0.1, 0.1, 0.1],
+                    [ERC20BridgeSource.Native]: [1, 0.96, 0.94, 0.92], // Effectively [0.98, 0.94, 0.92, 0.90]
+                    [ERC20BridgeSource.Uniswap]: [0.96, 0.1, 0.1, 0.1], // [0.95]
+                    [ERC20BridgeSource.Eth2Dai]: [0.95, 0.1, 0.1, 0.1], // [0.94]
+                    [ERC20BridgeSource.Kyber]: [0.1, 0.1, 0.1, 0.1], // [0.094]
                 };
                 replaceSamplerOps({
                     getBuyQuotes: createGetMultipleBuyQuotesOperationFromRates(rates),
@@ -1526,7 +1544,7 @@ describe('MarketOperationUtils tests', () => {
                     marketOperationUtils,
                     createOrdersFromBuyRates(FILL_AMOUNT, rates[ERC20BridgeSource.Native]),
                     FILL_AMOUNT,
-                    { ...DEFAULT_OPTS, numSamples: 4 },
+                    { ...DEFAULT_OPTS, numSamples: 4, gasPrice },
                 );
                 const improvedOrders = improvedOrdersResponse.optimizedOrders;
                 const orderSources = improvedOrders.map(o => o.fills[0].source);

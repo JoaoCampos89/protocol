@@ -8,6 +8,7 @@ import 'mocha';
 import * as TypeMoq from 'typemoq';
 
 import { MarketOperation, NativeOrderWithFillableAmounts } from '../src/types';
+import { NATIVE_LIMIT_ORDER_GAS_USED, NATIVE_RFQT_GAS_USED } from '../src/utils/market_operation_utils/constants';
 import {
     CollapsedFill,
     DexSample,
@@ -54,7 +55,8 @@ function collapsedFillFromNativeOrder(order: NativeOrderWithFillableAmounts): Na
                 ? (fillData as NativeLimitOrderFillData)
                 : (fillData as NativeRfqOrderFillData),
         subFills: [],
-        gasUsed: GAS_USED,
+        gasUsed:
+            order.type === FillQuoteTransformerOrderType.Limit ? NATIVE_LIMIT_ORDER_GAS_USED : NATIVE_RFQT_GAS_USED,
     };
 }
 
@@ -167,7 +169,7 @@ describe('generateQuoteReport', async () => {
             fillData: {
                 order: rfqtOrder1.order,
             } as NativeRfqOrderFillData,
-            gasUsed: GAS_USED,
+            gasUsed: NATIVE_RFQT_GAS_USED,
         };
         const rfqtOrder2Source: NativeRfqOrderQuoteReportEntry = {
             liquiditySource: ERC20BridgeSource.Native,
@@ -180,7 +182,7 @@ describe('generateQuoteReport', async () => {
             fillData: {
                 order: rfqtOrder2.order,
             } as NativeRfqOrderFillData,
-            gasUsed: GAS_USED,
+            gasUsed: NATIVE_RFQT_GAS_USED,
         };
         const orderbookOrder2Source: NativeLimitOrderQuoteReportEntry = {
             liquiditySource: ERC20BridgeSource.Native,
@@ -191,7 +193,7 @@ describe('generateQuoteReport', async () => {
             fillData: {
                 order: orderbookOrder2.order,
             } as NativeLimitOrderFillData,
-            gasUsed: GAS_USED,
+            gasUsed: NATIVE_LIMIT_ORDER_GAS_USED,
         };
         const uniswap2Source: BridgeQuoteReportEntry = {
             liquiditySource: ERC20BridgeSource.UniswapV2,
@@ -280,7 +282,7 @@ describe('generateQuoteReport', async () => {
             fillData: {
                 order: orderbookOrder1.order,
             } as NativeLimitOrderFillData,
-            gasUsed: GAS_USED,
+            gasUsed: NATIVE_LIMIT_ORDER_GAS_USED,
         };
         const uniswap1Source: BridgeQuoteReportEntry = {
             liquiditySource: ERC20BridgeSource.UniswapV2,
@@ -374,12 +376,12 @@ function expectEqualQuoteReportEntries(
             expect(actualEntry.fillData.order).to.eql(
                 // tslint:disable-next-line:no-unnecessary-type-assertion
                 (expectedEntry.fillData as NativeFillData).order,
-                `${variableName} incorrect at index ${idx}`,
+                `${actualEntry.liquiditySource} ${variableName} incorrect at index ${idx}`,
             );
         }
         expect(_.omit(actualEntry, 'fillData')).to.eql(
             _.omit(expectedEntry, 'fillData'),
-            `${variableName} incorrect at index ${idx}`,
+            `${actualEntry.liquiditySource} ${variableName} incorrect at index ${idx}`,
         );
     });
 }

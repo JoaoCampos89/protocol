@@ -371,6 +371,31 @@ contract TestERC20BridgeSamplerKyberNetwork is
             toToken
         );
     }
+
+    function tradeWithHint(
+        address fromToken,
+        uint256 sellAmount,
+        address toToken,
+        address payable recipientAddress,
+        uint256 maxBuyTokenAmount,
+        uint256 minConversionRate,
+        address payable walletId,
+        bytes calldata hint
+    )
+        external
+        payable
+        returns (uint256 boughtAmount)
+    {
+        _revertIfShouldFail();
+        fromToken = fromToken == ETH_ADDRESS ? _getWethAddress() : fromToken;
+        toToken = toToken == ETH_ADDRESS ? _getWethAddress() : toToken;
+        return LibDeterministicQuotes.getDeterministicSellQuote(
+            SALT,
+            fromToken,
+            toToken,
+            sellAmount
+        );
+    }
 }
 
 
