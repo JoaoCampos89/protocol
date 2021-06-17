@@ -815,7 +815,9 @@ export class SamplerOperations {
                     }
                     const firstHopResult = fillData.firstHopSource.handleCallResults(firstHop.returnData);
                     const secondHopResult = fillData.secondHopSource.handleCallResults(secondHop.returnData);
-                    const gasUsed = firstHopResult.gasUsed[0].plus(secondHopResult.gasUsed[0]);
+                    const gasUsed = (firstHopResult.gasUsed[0] || ZERO_AMOUNT).plus(
+                        secondHopResult.gasUsed[0] || ZERO_AMOUNT,
+                    );
                     return { gasUsed: [gasUsed], samples: [buyAmount] };
                 },
             });
@@ -876,7 +878,9 @@ export class SamplerOperations {
                     fillData.secondHopSource = secondHopOps[secondHop.sourceIndex.toNumber()];
                     const firstHopResult = fillData.firstHopSource.handleCallResults(firstHop.returnData);
                     const secondHopResult = fillData.secondHopSource.handleCallResults(secondHop.returnData);
-                    const gasUsed = firstHopResult.gasUsed[0].plus(secondHopResult.gasUsed[0]);
+                    const gasUsed = (firstHopResult.gasUsed[0] || ZERO_AMOUNT).plus(
+                        secondHopResult.gasUsed[0] || ZERO_AMOUNT,
+                    );
                     return { gasUsed: [gasUsed], samples: [buyAmount] };
                 },
             });
