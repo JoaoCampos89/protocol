@@ -175,7 +175,6 @@ function dexSamplesToFills(
                 : inputAmountPerEth.times(fee).times(output.dividedToIntegerBy(input));
         }
         const adjustedOutput = side === MarketOperation.Sell ? output.minus(penalty) : output.plus(penalty);
-        const adjustedRate = side === MarketOperation.Sell ? adjustedOutput.div(input) : input.div(adjustedOutput);
 
         fills.push({
             sourcePathId,

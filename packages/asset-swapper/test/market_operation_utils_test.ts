@@ -21,11 +21,9 @@ import { MarketOperationUtils } from '../src/utils/market_operation_utils/';
 import {
     BUY_SOURCE_FILTER_BY_CHAIN_ID,
     DEFAULT_GET_MARKET_ORDERS_OPTS,
-    NATIVE_RFQT_GAS_USED,
     POSITIVE_INF,
     SELL_SOURCE_FILTER_BY_CHAIN_ID,
     SOURCE_FLAGS,
-    ZERO_AMOUNT,
 } from '../src/utils/market_operation_utils/constants';
 import { createFills } from '../src/utils/market_operation_utils/fills';
 import { PoolsCache } from '../src/utils/market_operation_utils/pools_cache';
