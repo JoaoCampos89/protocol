@@ -1405,7 +1405,6 @@ export class SamplerOperations {
             }),
         );
         const registeredOpts = allOps.filter(op => op.isDeregistered && !op.isDeregistered());
-        console.log(`Filtered ${allOps.length - registeredOpts.length} ops`);
         return registeredOpts;
     }
 

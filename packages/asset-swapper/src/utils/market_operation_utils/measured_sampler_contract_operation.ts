@@ -78,7 +78,6 @@ class PathDeregister {
             }
             this._registry[source]![key] = Math.min(this._MAX_RESULTS, this._registry[source]![key] + 1);
         } else {
-            logUtils.log(`Deregistering ${source} ${key} ${result.samples} ${this._registry[source]![key]}`);
             this._registry[source]![key] = Math.max(-this._MAX_RESULTS, this._registry[source]![key] - 1);
         }
     }
